@@ -471,7 +471,6 @@ void sub_08026090(ChuchuBossEntity* this) {
         }
     }
 }
-
 void sub_08026110(ChuchuBossEntity* this) {
     s32 uVar2;
     s32 uVar3;

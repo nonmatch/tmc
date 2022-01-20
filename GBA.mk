@@ -104,7 +104,7 @@ $(BUILD_DIR)/enum_include/%.inc: include/%.h
 # agbcc includes are separate because we don't want dependency scanning on them
 CINCLUDE := -I include -I $(BUILD_DIR)
 CPPFLAGS := -I tools/agbcc -I tools/agbcc/include $(CINCLUDE) -nostdinc -undef -D$(GAME_VERSION) -DREVISION=$(REVISION) -D$(GAME_LANGUAGE)
-CFLAGS := -O2 -Wimplicit -Wparentheses -Werror -Wno-multichar -g3
+CFLAGS := -O2 -Wimplicit -Wparentheses -Werror -Wno-multichar -g3 -fdwarf-bugfix
 
 interwork := $(BUILD_DIR)/src/interrupts.o \
 $(BUILD_DIR)/src/collision.o \
