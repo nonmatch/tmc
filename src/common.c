@@ -85,6 +85,8 @@ u32 sub_0801DF60(u32 a1, u8* p);
 u32 sub_0801DF78(u32 a1, u32 a2);
 void sub_0801DF28(u32 x, u32 y, s32 color);
 
+extern s16 gUnk_02018EE0[];
+
 u32 DecToHex(u32 value) {
     u32 result;
     register u32 r1 asm("r1");
@@ -656,103 +658,49 @@ void sub_0801E24C(s32 param_1, s32 param_2) {
     }
 }
 
-ASM_FUNC("asm/non_matching/common/sub_0801E290.inc", void sub_0801E290(u32 a1, u32 a2, u32 a3));
-
-ASM_FUNC("asm/non_matching/common/sub_0801E31C.inc", void sub_0801E31C(u32 a1, u32 a2, u32 a3, u32 a4));
-
-ASM_FUNC("asm/non_matching/common/sub_0801E49C.inc", void sub_0801E49C(u32 a1, u32 a2, u32 a3, u32 a4));
-
-ASM_FUNC("asm/non_matching/common/sub_0801E64C.inc", void sub_0801E64C(u32 a1, u32 a2, u32 a3, u32 a4, u32 a5));
-
-void sub_0801E6C8(u32 param_1) {
-    u32 tmp;
+void sub_0801E290(u32 param_1, u32 param_2, u32 count) {
+    s32 uVar1;
+    s32 iVar2;
+    s32 iVar4;
+    u8* forwardAccess;
+    u8* backwardAccess;
+    s16* puVar6;
+    u32 uVar5;
+    u32 uVar7;
     u32 index;
-    if (param_1 - 1 < 100) {
-        for (index = 0; index < 0x80; index++) {
-            if (param_1 == gSave.unk1C1[index]) {
-                gSave.unk1C1[index] = 0xf1;
-            }
+    u32 x;
+    forwardAccess = &gUnk_02017AA0[gUnk_03003DE4[0]].filler[param_2 * 2];
+    backwardAccess = forwardAccess;
+    uVar5 = uVar7 = param_2;
+    puVar6 = gUnk_02018EE0;
+
+    while (count-- > 0) {
+        uVar1 = *puVar6++;
+        iVar2 = param_1 - uVar1;
+        iVar4 = param_1 + uVar1;
+        if (iVar2 < 0) {
+            iVar2 = 0;
         }
-        tmp = sub_08002632(gFuseInfo.ent);
-        if ((tmp - 1 < 0x7f) && (gSave.unk1C1[tmp] == 0xf1)) {
-            gSave.unk1C1[tmp] = 0xf2;
+        if (iVar4 > 0xef) {
+            iVar4 = 0xf0;
         }
-        for (index = 0; index < 0x20; index++) {
-            if (param_1 == gUnk_03003DF0.array[index].unk_3) {
-                gUnk_03003DF0.array[index].unk_3 = 0xf1;
-            }
+        if (((u16)uVar5 & 0xffff) < 0xa0) {
+            backwardAccess[0] = iVar4;
+            backwardAccess[1] = iVar2;
         }
+        if (((u16)uVar7 & 0xffff) < 0xa0) {
+            forwardAccess[0] = iVar4;
+            forwardAccess[1] = iVar2;
+        }
+        backwardAccess -= 2;
+        forwardAccess += 2;
+        uVar5--;
+        uVar7++;
     }
 }
-
-void sub_0801E738(u32 param_1) {
-    s32 index;
-    s32 tmp;
-
-    sub_0801E82C();
-    if (param_1 - 0x65 < 0x11) {
-        index = sub_0801E8B0(param_1);
-        if (index < 0) {
-            index = 0;
-            while (gSave.unk118[index] != 0) {
-                index++;
-            }
-        }
-        if ((u32)index < 0x12) {
-            gSave.unk118[index] = param_1;
-            tmp = gSave.unk12B[index] + 1;
-            if (tmp > 99) {
-                tmp = 99;
-            }
-            gSave.unk12B[index] = tmp;
-        }
-    }
+return i;
 }
-
-void sub_0801E798(u32 a1) {
-    s32 idx = sub_0801E8B0(a1);
-    if (idx >= 0) {
-        s32 next = gSave.unk12B[idx] - 1;
-        if (next <= 0) {
-            gSave.unk118[idx] = 0;
-            next = 0;
-        }
-        gSave.unk12B[idx] = next;
-    }
-}
-
-u32 sub_0801E7D0(u32 a1) {
-    s32 tmp = sub_0801E8B0(a1);
-    if (tmp < 0) {
-        return 0;
-    }
-    return gSave.unk12B[tmp];
-}
-
-u32 CheckKinstoneFused(u32 idx) {
-    if (idx > 100 || idx < 1) {
-        return 0;
-    }
-    return ReadBit(&gSave.unk241, idx);
-}
-
-bool32 sub_0801E810(u32 idx) {
-    if (idx > 100 || idx < 1) {
-        return FALSE;
-    }
-    return ReadBit(&gSave.unk24E, idx);
-}
-
-ASM_FUNC("asm/non_matching/common/sub_0801E82C.inc", void sub_0801E82C(void));
-
-s32 sub_0801E8B0(u32 idx) {
-    u32 i;
-
-    for (i = 0; i < 18; ++i) {
-        if (idx == gSave.unk118[i])
-            return i;
-    }
-    return -1;
+return -1;
 }
 
 void sub_0801E8D4(void) {
