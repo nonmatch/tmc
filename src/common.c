@@ -85,6 +85,27 @@ u32 sub_0801DF60(u32 a1, u8* p);
 u32 sub_0801DF78(u32 a1, u32 a2);
 void sub_0801DF28(u32 x, u32 y, s32 color);
 
+extern void* GetRoomProperty(u32, u32, u32);
+
+extern const DungeonLayout** gUnk_080C9C50[];
+u32 sub_0801DF10(DungeonLayout* lyt);
+
+enum DungeonMapObjectTypes {
+    DMO_TYPE_NONE,
+    DMO_TYPE_PLAYER,
+    DMO_TYPE_CHEST,
+    DMO_TYPE_ENTRY,
+    DMO_TYPE_BOSS,
+};
+
+typedef struct {
+    u8 type; /**< @see DungeonMapObjectTypes */
+    u8 x;
+    u8 y;
+} PACKED DungeonMapObject;
+
+// More like PrepareTileEntitesForDungeonMap or so
+
 u32 DecToHex(u32 value) {
     u32 result;
     register u32 r1 asm("r1");
@@ -406,95 +427,77 @@ u32 sub_0801DB94(void) {
     return gRoomTransition.player_status.dungeon_map_y >> 11;
 }
 
-ASM_FUNC("asm/non_matching/common/DrawDungeonMap.inc", void DrawDungeonMap(u32 floor, void* data, u32 size));
-
-void sub_0801DD58(u32 area, u32 room) {
-    RoomHeader* hdr = gAreaRoomHeaders[area] + room;
-    gArea.pCurrentRoomInfo->map_x = hdr->map_x;
-    gArea.pCurrentRoomInfo->map_y = hdr->map_y;
-}
-
-void LoadDungeonMap(void) {
-    LoadResourceAsync(gUnk_0201AEE0, 0x6006000, sizeof(gUnk_0201AEE0));
-}
-
-void DrawDungeonFeatures(u32 floor, void* data, u32 size) {
-    u32 bankOffset;
-    u32 width;
-    u32 height;
-    u32 x;
-    u32 y;
-    u16 mapX;
-    u16 mapY;
-    u32 tmp;
-    u32 tmp2;
-    u32 color;
-    u32 features;
+void DrawDungeonMap(u32 floor, DungeonMapObject* specialData, u32 size) {
+    DungeonLayout* floorMapData;
     TileEntity* tileEntity;
+    u32 flagBankOffset;
     RoomHeader* roomHeader;
-    const DungeonLayout* layout;
-    const DungeonLayout* nextLayout;
-    u8* ptr;
-    u32 tmp3;
-    u32 tmp4;
+    s32 tmp1;
+    s32 tmp3;
 
-    if (!AreaHasMap()) {
-        return;
-    }
-    layout = gUnk_080C9C50[gArea.dungeon_idx][floor];
-    MemClear(gMapDataBottomSpecial, 0x8000);
-    while (layout->area != 0) {
-        // ROOM_VISIT_MARKER has to be first TileEntity in the room.
-        tileEntity = (TileEntity*)GetRoomProperty(layout->area, layout->room, 3);
-        bankOffset = sub_0801DF10(layout);
-        features = 0;
-        if (layout->area == gUI.roomControls.area && layout->room == gUI.roomControls.room) {
-            features = 8;
+    MemClear(specialData, size);
+    specialData->type = DMO_TYPE_PLAYER;
+    specialData->x = (gRoomTransition.player_status.dungeon_map_x >> 4) & 0x7f;
+    specialData->y = (gRoomTransition.player_status.dungeon_map_y >> 4) & 0x7f;
+    specialData++;
+    floorMapData = (DungeonLayout*)gUnk_080C9C50[gArea.dungeon_idx][floor];
+    while (floorMapData->area != 0) {
+        tileEntity = (TileEntity*)GetRoomProperty(floorMapData->area, floorMapData->room, 3);
+        if (tileEntity == NULL) {
+            floorMapData++;
         } else {
-            if (HasDungeonSmallKey()) {
-                features = 2;
-            }
-            if (IsRoomVisited(tileEntity, bankOffset)) {
-                features = 3;
-            }
-        }
-        if ((layout->unk_2 & 1) != 0) {
-            features = 0;
-        }
-        nextLayout = layout + 1;
-        if (features != 0) {
-            DmaCopy32(3, &gMapData + layout->mapDataOffset, &gMapDataBottomSpecial, 0x400);
-
-            roomHeader = gAreaRoomHeaders[layout->area] + layout->room;
-            mapX = roomHeader->map_x / 0x10;
-            tmp3 = roomHeader->map_y;
-            tmp4 = 0x7ff;
-            mapY = (tmp3 & tmp4) / 0x10;
-            width = roomHeader->pixel_width / 0x10;
-            height = roomHeader->pixel_height / 0x10;
-            tmp = (width + 3) / 4;
-
-            for (y = 0; y < height; y++) {
-                ptr = gMapDataBottomSpecial + y * tmp;
-                for (x = 0; x < width; x++) {
-                    tmp2 = mapX + x;
-                    color = sub_0801DF78(sub_0801DF60(x, ptr), features);
-                    sub_0801DF28(tmp2, mapY + y, color);
+            flagBankOffset = sub_0801DF10(floorMapData);
+            if (HasDungeonBigKey()) {
+                while (tileEntity->type != 0) {
+                    switch (tileEntity->type) {
+                        case SMALL_CHEST:
+                        case BIG_CHEST:
+                            if (!CheckLocalFlagByBank(flagBankOffset, tileEntity->localFlag)) {
+                                roomHeader = gAreaRoomHeaders[floorMapData->area] + floorMapData->room;
+                                specialData->type = DMO_TYPE_CHEST;
+                                if (tileEntity->type == SMALL_CHEST) {
+                                    specialData->x =
+                                        ((((tileEntity->tilePos << 4 & 0x3f0) | 8) + (roomHeader->map_x % 0x800)) >> 4);
+                                    specialData->y =
+                                        ((((tileEntity->tilePos >> 2 & 0x3f0) | 8) + (roomHeader->map_y % 0x800)) >> 4);
+                                } else {
+                                    specialData->x = (((roomHeader->map_x % 0x800) + tileEntity->tilePos) >> 4);
+                                    specialData->y = (((roomHeader->map_y % 0x800) + (*(u16*)&tileEntity->_6)) >> 4);
+                                }
+                                specialData++;
+                            }
+                            break;
+                    }
+                    tileEntity++;
                 }
             }
+            if ((HasDungeonBigKey() && ((floorMapData->unk_2 & 2) != 0)) && (!CheckGlobalFlag(gArea.dungeon_idx + 1))) {
+                roomHeader = gAreaRoomHeaders[floorMapData->area] + floorMapData->room;
+                specialData->type = DMO_TYPE_BOSS;
+                tmp1 = ((roomHeader->pixel_width / 2) + roomHeader->map_x) / 16;
+                if (tmp1 < 0) {
+                    tmp1 = tmp1 + 0x7f;
+                }
+                specialData->x = tmp1 + (tmp1 / 128) * -128;
+                tmp3 = ((roomHeader->pixel_height / 2) + roomHeader->map_y) / 16;
+                specialData->y = tmp3 + (tmp3 / 128) * -128;
+                specialData++;
+            }
+            if (floorMapData->area == gRoomTransition.player_status.dungeon_area &&
+                floorMapData->room == gRoomTransition.player_status.dungeon_room) {
+                specialData->type = DMO_TYPE_ENTRY;
+                // TODO rename dungeon_x and dungeon_y to dungeonEntryX/Y?
+                specialData->x = ((u16)gRoomTransition.player_status.dungeon_x >> 4) & 0x7f;
+                specialData->y = ((u16)gRoomTransition.player_status.dungeon_y >> 4) & 0x7f;
+                specialData++;
+            }
+            floorMapData++;
         }
-        layout = nextLayout;
     }
 }
-
-u32 sub_0801DF10(const DungeonLayout* layout) {
-    u32 offset;
-
-    if (layout->unk_3 == 1)
-        offset = 0x300;
-    else
-        offset = GetFlagBankOffset(layout->area);
-    return offset;
+offset = 0x300;
+else offset = GetFlagBankOffset(layout->area);
+return offset;
 }
 
 void sub_0801DF28(u32 x, u32 y, s32 color) {
