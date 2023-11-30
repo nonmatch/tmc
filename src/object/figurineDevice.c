@@ -485,14 +485,10 @@ void sub_080880D8(FigurineDeviceEntity* this) {
     }
 }
 
-NONMATCH("asm/non_matching/figurineDevice/sub_08088160.inc",
-         bool32 sub_08088160(FigurineDeviceEntity* this, s32 param_2)) {
-    u8 bVar1;
-    bool32 condition;
-    u32 uVar3;
+bool32 sub_08088160(FigurineDeviceEntity* this, s32 param_2) {
     bool32 result;
     const struct_080FC3E4* ptr;
-    u32 tmp;
+    u8 kinstoneId;
 
     ptr = &gUnk_080FC3E4[param_2];
     result = FALSE;
@@ -502,64 +498,58 @@ NONMATCH("asm/non_matching/figurineDevice/sub_08088160.inc",
         switch (ptr->unk_6) {
             case 0x8:
             case 0x40:
-                if (CheckLocalFlagByBank(ptr->bank, ptr->flag)) {
+                if (CheckLocalFlagByBank(ptr->unk_0, ptr->unk_4))
                     result = TRUE;
-                }
-                return result;
-                break;
+                return result; // new
+                // break;
             case 0x10:
-                if (CheckKinstoneFused(gUnk_080FC3E4[param_2].flag)) {
+                if (CheckKinstoneFused(ptr->unk_4))
                     result = TRUE;
-                }
                 return result;
-                break;
             default:
                 return result;
             case 0x20:
-                switch (gUnk_080FC3E4[param_2].flag) {
+                switch (ptr->unk_4) {
                     case 0:
-                        if (CheckKinstoneFused(KINSTONE_20) || CheckKinstoneFused(KINSTONE_10) ||
-                            CheckKinstoneFused(KINSTONE_19)) {
+                        if (CheckKinstoneFused(KINSTONE_20) || CheckKinstoneFused(KINSTONE_10)) {
                             result = TRUE;
+                            break;
                         }
+                        kinstoneId = KINSTONE_19;
+                    lol:
+                        if (CheckKinstoneFused(kinstoneId))
+                            result = TRUE;
                         break;
                     case 1:
-                        if ((u8)this->unk_7c >= 5 && CheckKinstoneFused(KINSTONE_28)) {
-                            result = TRUE;
+                        if (this->unk_7c >= 5) {
+                            kinstoneId = KINSTONE_28;
+                            goto lol;
                         }
-
                         break;
                     case 2:
                         if (CheckKinstoneFused(KINSTONE_54) || CheckKinstoneFused(KINSTONE_56) ||
-                            CheckKinstoneFused(KINSTONE_3D)) {
+                            CheckKinstoneFused(KINSTONE_3D))
                             result = TRUE;
-                        }
                         break;
                     case 3:
                         if (CheckKinstoneFused(KINSTONE_3B) || CheckKinstoneFused(KINSTONE_4A) ||
-                            CheckKinstoneFused(KINSTONE_D)) {
+                            CheckKinstoneFused(KINSTONE_D))
                             result = TRUE;
-                        }
                         break;
                     case 4:
                         if (CheckKinstoneFused(KINSTONE_49) || CheckKinstoneFused(KINSTONE_55) ||
-                            CheckKinstoneFused(KINSTONE_3C)) {
+                            CheckKinstoneFused(KINSTONE_3C))
                             result = TRUE;
-                        }
                         break;
                     case 5:
-                        if (this->unk_7c >= 2 && CheckGlobalFlag(MACHI_MACHIHOKORI)) {
+                        if (this->unk_7c >= 2 && CheckGlobalFlag(MACHI_MACHIHOKORI))
                             result = TRUE;
-                        }
-                    default:
-                        return result;
+                        break;
                 }
-                break;
         }
     }
     return result;
 }
-END_NONMATCH
 
 void sub_0808826C(FigurineDeviceEntity* this) {
     s32 tmp = 100;
